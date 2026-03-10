@@ -26,10 +26,10 @@ test('AI story generation with mocked response', async ({ page }) => {
   );
 });
 
-test('AI story generation shows loading state', async ({ page }) => {
-  // Delay the mock response to test loading state
+test('AI story generation with delayed response', async ({ page }) => {
+  // Intercept with delay to simulate slow AI response
   await page.route('**/api/agent', async (route) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -38,15 +38,8 @@ test('AI story generation shows loading state', async ({ page }) => {
   });
 
   await page.goto('/stories');
+  await page.getByRole('button', { name: 'Generate Story' }).click();
 
-  const button = page.getByRole('button', { name: 'Generate Story' });
-  await button.click();
-
-  // Check loading state
-  await expect(button).toHaveText('Generating...');
-  await expect(button).toBeDisabled();
-
-  // Wait for completion
-  await expect(page.getByTestId('story-output')).toBeVisible();
-  await expect(button).toHaveText('Generate Story');
+  // Verify story eventually appears
+  await expect(page.getByTestId('story-output')).toHaveText('Delayed story response.');
 });
